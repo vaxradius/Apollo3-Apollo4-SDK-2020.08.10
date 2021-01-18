@@ -89,23 +89,48 @@ uint32_t sum(uint32_t n) {
 
 uint32_t test_sram(void)
 {
-	uint32_t *ptr = (uint32_t *)0x10060000;
+	volatile uint32_t *ptr = (uint32_t *)0x10060000;
+	volatile uint32_t temp = 0;
 	uint32_t err = 0;
 
 	for(int i=0; i < (0x00100000/4)-1; i++)
 	{
-		*ptr=0xa5a5a5a5;
+		*ptr=0xaaaaaaaa;
 		ptr++;
 	}
 
 	ptr = (uint32_t *)0x10060000;
 	for(int i=0; i < (0x00100000/4)-1; i++)
 	{
-		if(*ptr != 0xa5a5a5a5)
+		temp = *ptr;
+		if(temp != 0xaaaaaaaa)
 		{
 			err++;
+			am_util_stdio_printf("0x%x=0x%x expected: 0x%x\n", ptr, temp, 0xaaaaaaaa);
+			//return err;
 		}
-			//am_util_stdio_printf("0x%x=0x%x\n", ptr, *ptr);
+		
+		ptr++;
+	}
+	
+	ptr = (uint32_t *)0x10060000;
+	for(int i=0; i < (0x00100000/4)-1; i++)
+	{
+		*ptr=0x55555555;
+		ptr++;
+	}
+
+	ptr = (uint32_t *)0x10060000;
+	for(int i=0; i < (0x00100000/4)-1; i++)
+	{
+		temp = *ptr;
+		if(temp != 0x55555555)
+		{
+			err++;
+			am_util_stdio_printf("0x%x=0x%x expected: 0x%x\n", ptr, temp, 0x55555555);
+			//return err;
+		}
+		
 		ptr++;
 	}
 
@@ -124,8 +149,19 @@ main(void)
     am_util_id_t sIdDevice;
     uint32_t ui32StrBuf;
 	uint32_t temp = 0;
+	
+	 am_util_stdio_printf("Before cache enabled\n");
+	
+	    //
+    // Initialize the printf interface for ITM output
+    //
+    am_bsp_debug_printf_enable();
+    
+    
 
 	temp = test_sram();
+	
+	am_util_stdio_printf("am_hal_cachectrl_enable\n");
 
     //
     // Set the default cache configuration
@@ -138,10 +174,7 @@ main(void)
     //
     //am_bsp_low_power_init();
 
-    //
-    // Initialize the printf interface for ITM output
-    //
-    am_bsp_debug_printf_enable();
+
 
     //
     // Print the banner.
